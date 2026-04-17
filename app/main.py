@@ -4,7 +4,7 @@ import os
 import sys
 
 import joblib
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 
 from app.schemas import HealthResponse, PredictRequest, PredictResponse
 
