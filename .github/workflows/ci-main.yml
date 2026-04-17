@@ -28,11 +28,11 @@ jobs:
       - name: Lint with ruff
         run: ruff check .
 
-      - name: Run tests
-        run: pytest tests/ -v
-
       - name: Train model
         run: python training/train.py
+
+      - name: Run tests
+        run: pytest tests/ -v
 
       - name: Evaluate model
         run: python training/evaluate.py

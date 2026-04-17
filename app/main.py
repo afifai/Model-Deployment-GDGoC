@@ -4,7 +4,7 @@ import os
 import sys
 
 import joblib
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from app.schemas import HealthResponse, PredictRequest, PredictResponse
 
@@ -15,21 +15,31 @@ MODEL_PATH = os.environ.get(
     os.path.join(os.path.dirname(__file__), "..", "training", "artifacts", "model.pkl"),
 )
 
-
-def _load_model():
-    """Load the ML model from disk."""
-    resolved = os.path.abspath(MODEL_PATH)
-    if not os.path.exists(resolved):
-        print(f"Error: Model not found at {resolved}", file=sys.stderr)
-        sys.exit(1)
-    loaded = joblib.load(resolved)
-    print(f"Model loaded from: {resolved}")
-    return loaded
-
-
-model = _load_model()
-
 app = FastAPI(title="SMS Spam Detection API")
+
+_model = None
+
+
+def _get_model():
+    """Lazy-load the ML model from disk."""
+    global _model
+    if _model is None:
+        resolved = os.path.abspath(MODEL_PATH)
+        if not os.path.exists(resolved):
+            raise RuntimeError(f"Model not found at {resolved}")
+        _model = joblib.load(resolved)
+        print(f"Model loaded from: {resolved}")
+    return _model
+
+
+@app.on_event("startup")
+def startup_event():
+    """Load model on startup — fail fast if missing."""
+    try:
+        _get_model()
+    except RuntimeError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -41,6 +51,7 @@ def health():
 @app.post("/predict", response_model=PredictResponse)
 def predict(request: PredictRequest):
     """Predict spam/not spam for the given text."""
+    model = _get_model()
     prediction = int(model.predict([request.text])[0])
     label = LABEL_MAP.get(prediction, "unknown")
     return PredictResponse(prediction=prediction, label=label)
