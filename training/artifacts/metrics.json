@@ -1,0 +1,13 @@
+{
+  "accuracy": 0.9371,
+  "f1_normal": 0.9609,
+  "f1_unknown": 0.9451,
+  "f1_spam": 0.8806,
+  "model_type": "MultinomialNB",
+  "model_params": {
+    "alpha": 1.0,
+    "class_prior": null,
+    "fit_prior": true,
+    "force_alpha": true
+  }
+}
