@@ -7,14 +7,11 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: sms-spam-api
-  REGION: asia-southeast2
+  REGION: ${{ secrets.GCP_REGION }}
 
 jobs:
   build-train-deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - name: Checkout code
@@ -50,4 +47,4 @@ jobs:
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
-          source: backend
+          source: .

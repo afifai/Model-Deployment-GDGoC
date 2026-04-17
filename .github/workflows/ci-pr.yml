@@ -7,9 +7,6 @@ on:
 jobs:
   lint-test-evaluate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - name: Checkout PR code
@@ -42,7 +39,7 @@ jobs:
         continue-on-error: true
         run: |
           git fetch origin main
-          git show origin/main:backend/training/artifacts/metrics.json > training/artifacts/baseline_metrics.json 2>/dev/null || echo "No baseline metrics found"
+          git show origin/main:training/artifacts/metrics.json > training/artifacts/baseline_metrics.json 2>/dev/null || echo "No baseline metrics found"
 
       - name: Compare metrics
         run: |
@@ -68,9 +65,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: confusion-matrix
-          path: backend/training/artifacts/pr/confusion_matrix.png
+          path: training/artifacts/pr/confusion_matrix.png
 
       - name: Post PR comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: backend/training/artifacts/report.md
+          path: training/artifacts/report.md
