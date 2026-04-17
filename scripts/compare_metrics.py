@@ -28,8 +28,13 @@ def compare(baseline_path, candidate_path: str) -> dict:
 
     baseline = None
     if baseline_path and os.path.exists(baseline_path):
-        with open(baseline_path) as f:
-            baseline = json.load(f)
+        try:
+            with open(baseline_path) as f:
+                content = f.read().strip()
+                if content:
+                    baseline = json.loads(content)
+        except (json.JSONDecodeError, ValueError):
+            baseline = None
 
     metrics = []
     for key, name in METRIC_KEYS:
