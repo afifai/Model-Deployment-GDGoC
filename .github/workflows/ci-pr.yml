@@ -7,6 +7,9 @@ on:
 jobs:
   lint-test-evaluate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout PR code
