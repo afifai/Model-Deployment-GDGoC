@@ -47,7 +47,9 @@ def generate_report(
 ) -> str:
     """Generate the full markdown report."""
     # Load comparison data
-    from scripts.compare_metrics import compare
+    import sys
+    sys.path.insert(0, os.path.dirname(__file__))
+    from compare_metrics import compare
 
     comparison = compare(baseline_path, metrics_path)
 
