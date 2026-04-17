@@ -391,8 +391,8 @@ Contoh report yang muncul di PR:
 
 Label:
 - `0` = **normal** (SMS biasa)
-- `1` = **unknown** (tidak diketahui)
-- `2` = **spam** (SMS spam/promosi)
+- `1` = **spam** (SMS penipuan/spam)
+- `2` = **promo** (SMS promosi dari operator/brand)
 
 ---
 

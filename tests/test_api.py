@@ -30,7 +30,7 @@ def test_predict_valid_text():
     assert "prediction" in data
     assert "label" in data
     assert data["prediction"] in (0, 1, 2)
-    label_map = {0: "normal", 1: "unknown", 2: "spam"}
+    label_map = {0: "normal", 1: "spam", 2: "promo"}
     assert data["label"] == label_map[data["prediction"]]
 
 

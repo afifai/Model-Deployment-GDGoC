@@ -8,7 +8,7 @@ from fastapi import FastAPI
 
 from app.schemas import HealthResponse, PredictRequest, PredictResponse
 
-LABEL_MAP = {0: "normal", 1: "unknown", 2: "spam"}
+LABEL_MAP = {0: "normal", 1: "spam", 2: "promo"}
 
 MODEL_PATH = os.environ.get(
     "MODEL_PATH",
