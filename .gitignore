@@ -3,7 +3,6 @@ __pycache__/
 *.pyo
 .env
 *.pkl
-training/artifacts/*.json
 training/artifacts/*.png
 .pytest_cache/
 .ruff_cache/

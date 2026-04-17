@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout PR code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -29,6 +31,12 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
+      # --- Get baseline metrics from main (committed by ci-main) ---
+      - name: Get baseline metrics
+        run: |
+          git show origin/main:training/artifacts/metrics.json > training/artifacts/baseline_metrics.json 2>/dev/null || echo "{}" > training/artifacts/baseline_metrics.json
+
+      # --- Train & evaluate PR model ---
       - name: Train PR model
         run: python training/train.py --output training/artifacts/model_pr.pkl
 
@@ -38,16 +46,10 @@ jobs:
             --model training/artifacts/model_pr.pkl \
             --output-dir training/artifacts/pr
 
-      - name: Get baseline metrics from main
-        continue-on-error: true
-        run: |
-          git fetch origin main
-          git show origin/main:training/artifacts/metrics.json > training/artifacts/baseline_metrics.json 2>/dev/null || echo "No baseline metrics found"
-
       - name: Compare metrics
         run: |
           BASELINE_ARG=""
-          if [ -f training/artifacts/baseline_metrics.json ]; then
+          if [ -s training/artifacts/baseline_metrics.json ] && [ "$(cat training/artifacts/baseline_metrics.json)" != "{}" ]; then
             BASELINE_ARG="--baseline training/artifacts/baseline_metrics.json"
           fi
           python scripts/compare_metrics.py \
@@ -56,12 +58,16 @@ jobs:
 
       - name: Generate report
         run: |
+          BASELINE_ARG=""
+          if [ -s training/artifacts/baseline_metrics.json ] && [ "$(cat training/artifacts/baseline_metrics.json)" != "{}" ]; then
+            BASELINE_ARG="--baseline training/artifacts/baseline_metrics.json"
+          fi
           python scripts/generate_report.py \
             --metrics training/artifacts/pr/metrics.json \
             --model training/artifacts/model_pr.pkl \
             --dataset training/data/dataset_sms_spam_v1.csv \
             --cm-image training/artifacts/pr/confusion_matrix.png \
-            $([ -f training/artifacts/baseline_metrics.json ] && echo "--baseline training/artifacts/baseline_metrics.json") \
+            $BASELINE_ARG \
             > training/artifacts/report.md
 
       - name: Upload confusion matrix
