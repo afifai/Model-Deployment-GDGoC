@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout PR code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -29,6 +31,32 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
+      # --- Baseline: train & evaluate using main branch code ---
+      - name: Build baseline from main branch
+        run: |
+          # Save current PR training code
+          cp training/train.py /tmp/pr_train.py
+
+          # Checkout main branch training code
+          git show origin/main:training/train.py > /tmp/main_train.py 2>/dev/null || true
+
+          if [ -f /tmp/main_train.py ] && [ -s /tmp/main_train.py ]; then
+            echo "Training baseline model using main branch code..."
+            cp /tmp/main_train.py training/train.py
+            python training/train.py --output training/artifacts/model_baseline.pkl
+            python training/evaluate.py \
+              --model training/artifacts/model_baseline.pkl \
+              --output-dir training/artifacts/baseline
+            cp training/artifacts/baseline/metrics.json training/artifacts/baseline_metrics.json
+            echo "Baseline metrics generated."
+          else
+            echo "No main branch training code found, skipping baseline."
+          fi
+
+          # Restore PR training code
+          cp /tmp/pr_train.py training/train.py
+
+      # --- PR: train & evaluate using PR branch code ---
       - name: Train PR model
         run: python training/train.py --output training/artifacts/model_pr.pkl
 
@@ -37,12 +65,6 @@ jobs:
           python training/evaluate.py \
             --model training/artifacts/model_pr.pkl \
             --output-dir training/artifacts/pr
-
-      - name: Get baseline metrics from main
-        continue-on-error: true
-        run: |
-          git fetch origin main
-          git show origin/main:training/artifacts/metrics.json > training/artifacts/baseline_metrics.json 2>/dev/null || echo "No baseline metrics found"
 
       - name: Compare metrics
         run: |
@@ -56,12 +78,16 @@ jobs:
 
       - name: Generate report
         run: |
+          BASELINE_ARG=""
+          if [ -f training/artifacts/baseline_metrics.json ]; then
+            BASELINE_ARG="--baseline training/artifacts/baseline_metrics.json"
+          fi
           python scripts/generate_report.py \
             --metrics training/artifacts/pr/metrics.json \
             --model training/artifacts/model_pr.pkl \
             --dataset training/data/dataset_sms_spam_v1.csv \
             --cm-image training/artifacts/pr/confusion_matrix.png \
-            $([ -f training/artifacts/baseline_metrics.json ] && echo "--baseline training/artifacts/baseline_metrics.json") \
+            $BASELINE_ARG \
             > training/artifacts/report.md
 
       - name: Upload confusion matrix
