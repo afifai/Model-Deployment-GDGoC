@@ -2,7 +2,6 @@
 
 import os
 
-import pytest
 from fastapi.testclient import TestClient
 
 # Ensure MODEL_PATH points to the trained model

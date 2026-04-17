@@ -3,7 +3,6 @@
 import argparse
 import json
 import os
-import sys
 
 METRIC_KEYS = [
     ("accuracy", "Accuracy"),
