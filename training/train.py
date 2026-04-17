@@ -6,9 +6,10 @@ import sys
 
 import joblib
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import LinearSVC
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.pipeline import make_pipeline
 
 
@@ -32,7 +33,10 @@ def train(dataset_path: str, output_path: str) -> str:
         X, y, test_size=0.25, random_state=42
     )
 
-    pipeline = make_pipeline(CountVectorizer(), MultinomialNB())
+    pipeline = make_pipeline(
+        TfidfVectorizer(max_features=5000, ngram_range=(1, 2), sublinear_tf=True),
+        CalibratedClassifierCV(LinearSVC(max_iter=5000, C=1.0), cv=3),
+    )
     pipeline.fit(X_train, y_train)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
