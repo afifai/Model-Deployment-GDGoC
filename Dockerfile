@@ -5,8 +5,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy all source code
 COPY app/ ./app/
-COPY training/artifacts/model.pkl ./training/artifacts/model.pkl
+COPY training/ ./training/
+COPY scripts/ ./scripts/
+
+# Train model inside the container build
+RUN python training/train.py
 
 ENV MODEL_PATH=/app/training/artifacts/model.pkl
 
