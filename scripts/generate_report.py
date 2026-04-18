@@ -9,7 +9,7 @@ import joblib
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-LABEL_MAP = {0: "normal", 1: "unknown", 2: "spam"}
+LABEL_MAP = {0: "normal", 1: "spam", 2: "promo"}
 
 
 def run_sanity_check(model_path: str, dataset_path: str, n_samples: int = 5):

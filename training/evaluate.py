@@ -17,7 +17,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 
-LABEL_MAP = {0: "normal", 1: "unknown", 2: "spam"}
+LABEL_MAP = {0: "normal", 1: "spam", 2: "promo"}
 
 
 def evaluate(model_path: str, dataset_path: str, output_dir: str) -> tuple[str, str]:
@@ -52,8 +52,8 @@ def evaluate(model_path: str, dataset_path: str, output_dir: str) -> tuple[str, 
     metrics = {
         "accuracy": round(accuracy, 4),
         "f1_normal": round(report.get("0", {}).get("f1-score", 0.0), 4),
-        "f1_unknown": round(report.get("1", {}).get("f1-score", 0.0), 4),
-        "f1_spam": round(report.get("2", {}).get("f1-score", 0.0), 4),
+        "f1_spam": round(report.get("1", {}).get("f1-score", 0.0), 4),
+        "f1_promo": round(report.get("2", {}).get("f1-score", 0.0), 4),
         "model_type": model_type,
         "model_params": model_params,
     }

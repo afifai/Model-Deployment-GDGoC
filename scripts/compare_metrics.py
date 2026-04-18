@@ -7,8 +7,8 @@ import os
 METRIC_KEYS = [
     ("accuracy", "Accuracy"),
     ("f1_normal", "F1-Score (normal)"),
-    ("f1_unknown", "F1-Score (unknown)"),
     ("f1_spam", "F1-Score (spam)"),
+    ("f1_promo", "F1-Score (promo)"),
 ]
 
 
