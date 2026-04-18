@@ -48,13 +48,15 @@ jobs:
             --model training/artifacts/model_pr.pkl \
             --output-dir training/artifacts/pr
 
-      - name: Commit confusion matrix image to branch
+      - name: Commit chart images to branch
         run: |
           cp training/artifacts/pr/confusion_matrix.png training/artifacts/confusion_matrix_pr.png
+          cp training/artifacts/pr/f1_scores.png training/artifacts/f1_scores_pr.png
+          cp training/artifacts/pr/class_distribution.png training/artifacts/class_distribution_pr.png
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f training/artifacts/confusion_matrix_pr.png
-          git diff --cached --quiet || git commit -m "ci: add confusion matrix image [skip ci]"
+          git add -f training/artifacts/confusion_matrix_pr.png training/artifacts/f1_scores_pr.png training/artifacts/class_distribution_pr.png
+          git diff --cached --quiet || git commit -m "ci: add evaluation charts [skip ci]"
           git push || true
 
       - name: Compare metrics

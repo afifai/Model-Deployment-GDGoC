@@ -115,9 +115,23 @@ def generate_report(
         lines.append("### 📊 Confusion Matrix (Visual)")
         lines.append("")
         lines.append(f"![Confusion Matrix]({image_url})")
+
+        # F1 scores chart (same base URL pattern)
+        f1_url = image_url.replace("confusion_matrix_pr.png", "f1_scores_pr.png")
+        lines.append("")
+        lines.append("### 📊 F1-Score per Class")
+        lines.append("")
+        lines.append(f"![F1 Scores]({f1_url})")
+
+        # Class distribution chart
+        dist_url = image_url.replace("confusion_matrix_pr.png", "class_distribution_pr.png")
+        lines.append("")
+        lines.append("### 📊 Class Distribution: Actual vs Predicted")
+        lines.append("")
+        lines.append(f"![Class Distribution]({dist_url})")
     elif cm_image_path and os.path.exists(cm_image_path):
         lines.append("")
-        lines.append("> 📎 Confusion matrix image tersedia sebagai artifact.")
+        lines.append("> 📎 Charts tersedia sebagai artifact.")
 
     lines.append("")
     lines.append("<!-- Sticky Pull Request Comment -->")
