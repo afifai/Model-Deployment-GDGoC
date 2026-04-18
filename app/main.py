@@ -5,6 +5,7 @@ import sys
 
 import joblib
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas import HealthResponse, PredictRequest, PredictResponse
 
@@ -16,6 +17,14 @@ MODEL_PATH = os.environ.get(
 )
 
 app = FastAPI(title="SMS Spam Detection API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 _model = None
 
