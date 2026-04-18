@@ -480,7 +480,7 @@ Pipeline:
 1. **TfidfVectorizer** — Mengubah teks SMS menjadi vektor numerik (TF-IDF)
    - `max_features=10000`, `ngram_range=(1,3)`, `sublinear_tf=True`, `min_df=2`, `max_df=0.95`
 2. **LogisticRegression** — Classifier linear dengan multinomial softmax
-   - `C=5.0`, `max_iter=1000`, `solver=lbfgs`, `multi_class=multinomial`
+   - `C=5.0`, `max_iter=1000`, `solver=lbfgs`
 
 ### Model Sebelumnya: TF-IDF + LinearSVC
 

@@ -44,7 +44,6 @@ def train(dataset_path: str, output_path: str) -> str:
             C=5.0,
             max_iter=1000,
             solver="lbfgs",
-            multi_class="multinomial",
         ),
     )
     pipeline.fit(X_train, y_train)
