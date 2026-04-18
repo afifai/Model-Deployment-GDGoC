@@ -474,19 +474,19 @@ Sumber: Dataset SMS spam Indonesia (publik).
 
 ## Tentang Model
 
-### Model Saat Ini: TF-IDF + LinearSVC
+### Model Saat Ini: TF-IDF + LogisticRegression
 
 Pipeline:
 1. **TfidfVectorizer** — Mengubah teks SMS menjadi vektor numerik (TF-IDF)
-   - `max_features=5000`, `ngram_range=(1,2)`, `sublinear_tf=True`
-2. **CalibratedClassifierCV(LinearSVC)** — Classifier SVM linear dengan calibrated probabilities
-   - `C=1.0`, `max_iter=5000`
+   - `max_features=10000`, `ngram_range=(1,3)`, `sublinear_tf=True`, `min_df=2`, `max_df=0.95`
+2. **LogisticRegression** — Classifier linear dengan multinomial softmax
+   - `C=5.0`, `max_iter=1000`, `solver=lbfgs`
 
-### Model Sebelumnya: CountVectorizer + MultinomialNB
+### Model Sebelumnya: TF-IDF + LinearSVC
 
 Pipeline lama (sudah diganti via PR):
-1. **CountVectorizer** — Bag of Words sederhana
-2. **MultinomialNB** — Naive Bayes classifier
+1. **TfidfVectorizer** — `max_features=5000`, `ngram_range=(1,2)`
+2. **CalibratedClassifierCV(LinearSVC)** — SVM linear dengan calibrated probabilities
 
 ---
 
