@@ -8,7 +8,7 @@ jobs:
   lint-test-evaluate:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
 
     steps:
@@ -16,6 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -34,12 +35,10 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
-      # --- Get baseline metrics from main (committed by ci-main) ---
       - name: Get baseline metrics
         run: |
           git show origin/main:training/artifacts/metrics.json > training/artifacts/baseline_metrics.json 2>/dev/null || echo "{}" > training/artifacts/baseline_metrics.json
 
-      # --- Train & evaluate PR model ---
       - name: Train PR model
         run: python training/train.py --output training/artifacts/model_pr.pkl
 
@@ -48,6 +47,17 @@ jobs:
           python training/evaluate.py \
             --model training/artifacts/model_pr.pkl \
             --output-dir training/artifacts/pr
+
+      - name: Commit chart images to branch
+        run: |
+          cp training/artifacts/pr/confusion_matrix.png training/artifacts/confusion_matrix_pr.png
+          cp training/artifacts/pr/f1_scores.png training/artifacts/f1_scores_pr.png
+          cp training/artifacts/pr/class_distribution.png training/artifacts/class_distribution_pr.png
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f training/artifacts/confusion_matrix_pr.png training/artifacts/f1_scores_pr.png training/artifacts/class_distribution_pr.png
+          git diff --cached --quiet || git commit -m "ci: add evaluation charts [skip ci]"
+          git push || true
 
       - name: Compare metrics
         run: |
@@ -60,6 +70,9 @@ jobs:
             $BASELINE_ARG > training/artifacts/comparison.json
 
       - name: Generate report
+        env:
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref }}
         run: |
           BASELINE_ARG=""
           if [ -s training/artifacts/baseline_metrics.json ] && [ "$(cat training/artifacts/baseline_metrics.json)" != "{}" ]; then
@@ -70,6 +83,7 @@ jobs:
             --model training/artifacts/model_pr.pkl \
             --dataset training/data/dataset_sms_spam_v1.csv \
             --cm-image training/artifacts/pr/confusion_matrix.png \
+            --image-url "https://raw.githubusercontent.com/${REPO}/${BRANCH}/training/artifacts/confusion_matrix_pr.png" \
             $BASELINE_ARG \
             > training/artifacts/report.md
 
