@@ -88,13 +88,31 @@ def generate_report(
             f"| **{s['expected']}** | {s['predicted']} | {match_icon} | {s['text']} |"
         )
 
-    # Embed confusion matrix image
+    # Confusion matrix — render as text table
     if cm_image_path and os.path.exists(cm_image_path):
         lines.append("")
         lines.append("### 📈 Confusion Matrix")
-        with open(cm_image_path, "rb") as img_file:
-            b64 = base64.b64encode(img_file.read()).decode("utf-8")
-        lines.append(f"![Confusion Matrix](data:image/png;base64,{b64})")
+        try:
+            from sklearn.metrics import confusion_matrix as cm_func, classification_report
+            model = joblib.load(model_path)
+            df = pd.read_csv(dataset_path)
+            X = df["Teks"].astype(str)
+            y = df["label"]
+            _, X_test, _, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+            y_pred = model.predict(X_test)
+            cm = cm_func(y_test, y_pred)
+            labels = sorted(LABEL_MAP.keys())
+            label_names = [LABEL_MAP[l] for l in labels]
+
+            lines.append("")
+            header = "| Actual \\ Predicted | " + " | ".join(f"**{n}**" for n in label_names) + " |"
+            lines.append(header)
+            lines.append("|---|" + "---|" * len(label_names))
+            for i, row in enumerate(cm):
+                row_str = " | ".join(str(v) for v in row)
+                lines.append(f"| **{label_names[i]}** | {row_str} |")
+        except Exception:
+            lines.append("> 📎 Confusion matrix tersedia sebagai artifact di tab **Actions** → **Artifacts** → `confusion-matrix`")
 
     lines.append("")
     lines.append("<!-- Sticky Pull Request Comment -->")
