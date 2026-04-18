@@ -1,12 +1,12 @@
 """Generate markdown PR report for model evaluation."""
 
 import argparse
-import base64
 import json
 import os
 
 import joblib
 import pandas as pd
+from sklearn.metrics import confusion_matrix as cm_func
 from sklearn.model_selection import train_test_split
 
 LABEL_MAP = {0: "normal", 1: "spam", 2: "promo"}
@@ -44,19 +44,16 @@ def generate_report(
     dataset_path: str,
     cm_image_path: str,
     baseline_path=None,
+    image_url=None,
 ) -> str:
     """Generate the full markdown report."""
-    # Load comparison data
     import sys
     sys.path.insert(0, os.path.dirname(__file__))
     from compare_metrics import compare
 
     comparison = compare(baseline_path, metrics_path)
-
-    # Sanity check
     sanity_results = run_sanity_check(model_path, dataset_path)
 
-    # Build report
     lines = []
     lines.append("## 🤖 Model Evaluation Report")
     lines.append("")
@@ -88,31 +85,39 @@ def generate_report(
             f"| **{s['expected']}** | {s['predicted']} | {match_icon} | {s['text']} |"
         )
 
-    # Confusion matrix — render as text table
-    if cm_image_path and os.path.exists(cm_image_path):
-        lines.append("")
-        lines.append("### 📈 Confusion Matrix")
-        try:
-            from sklearn.metrics import confusion_matrix as cm_func, classification_report
-            model = joblib.load(model_path)
-            df = pd.read_csv(dataset_path)
-            X = df["Teks"].astype(str)
-            y = df["label"]
-            _, X_test, _, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
-            y_pred = model.predict(X_test)
-            cm = cm_func(y_test, y_pred)
-            labels = sorted(LABEL_MAP.keys())
-            label_names = [LABEL_MAP[l] for l in labels]
+    # Confusion matrix table
+    lines.append("")
+    lines.append("### 📈 Confusion Matrix")
+    try:
+        model = joblib.load(model_path)
+        df = pd.read_csv(dataset_path)
+        X = df["Teks"].astype(str)
+        y = df["label"]
+        _, X_test, _, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+        y_pred = model.predict(X_test)
+        cm = cm_func(y_test, y_pred)
+        labels = sorted(LABEL_MAP.keys())
+        label_names = [LABEL_MAP[la] for la in labels]
 
-            lines.append("")
-            header = "| Actual \\ Predicted | " + " | ".join(f"**{n}**" for n in label_names) + " |"
-            lines.append(header)
-            lines.append("|---|" + "---|" * len(label_names))
-            for i, row in enumerate(cm):
-                row_str = " | ".join(str(v) for v in row)
-                lines.append(f"| **{label_names[i]}** | {row_str} |")
-        except Exception:
-            lines.append("> 📎 Confusion matrix tersedia sebagai artifact di tab **Actions** → **Artifacts** → `confusion-matrix`")
+        lines.append("")
+        header = "| Actual \\ Predicted | " + " | ".join(f"**{n}**" for n in label_names) + " |"
+        lines.append(header)
+        lines.append("|---|" + "---|" * len(label_names))
+        for i, row in enumerate(cm):
+            row_str = " | ".join(str(v) for v in row)
+            lines.append(f"| **{label_names[i]}** | {row_str} |")
+    except Exception:
+        lines.append("> Confusion matrix tidak tersedia.")
+
+    # Confusion matrix image
+    if image_url:
+        lines.append("")
+        lines.append("### 📊 Confusion Matrix (Visual)")
+        lines.append("")
+        lines.append(f"![Confusion Matrix]({image_url})")
+    elif cm_image_path and os.path.exists(cm_image_path):
+        lines.append("")
+        lines.append("> 📎 Confusion matrix image tersedia sebagai artifact.")
 
     lines.append("")
     lines.append("<!-- Sticky Pull Request Comment -->")
@@ -127,8 +132,9 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", required=True, help="Path to dataset CSV")
     parser.add_argument("--cm-image", required=True, help="Path to confusion matrix PNG")
     parser.add_argument("--baseline", default=None, help="Path to baseline metrics JSON")
+    parser.add_argument("--image-url", default=None, help="URL to confusion matrix image")
     args = parser.parse_args()
     report = generate_report(
-        args.metrics, args.model, args.dataset, args.cm_image, args.baseline
+        args.metrics, args.model, args.dataset, args.cm_image, args.baseline, args.image_url
     )
     print(report)
