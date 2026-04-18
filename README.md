@@ -37,11 +37,16 @@ Yang keren dari project ini:
 - [Menjalankan Evaluasi](#menjalankan-evaluasi)
 - [Menjalankan API Server](#menjalankan-api-server)
 - [Menjalankan Tests](#menjalankan-tests)
+- [Docker (Lokal)](#docker-lokal)
 - [Setup Google Cloud (untuk Deployment)](#setup-google-cloud-untuk-deployment)
 - [Setup GitHub Secrets](#setup-github-secrets)
 - [Cara Kerja CI/CD](#cara-kerja-cicd)
+- [Manage Cloud Run Service](#manage-cloud-run-service)
 - [Struktur Folder](#struktur-folder)
 - [API Endpoints](#api-endpoints)
+- [Tentang Dataset](#tentang-dataset)
+- [Tentang Model](#tentang-model)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -393,6 +398,119 @@ Label:
 - `0` = **normal** (SMS biasa)
 - `1` = **spam** (SMS penipuan/spam)
 - `2` = **promo** (SMS promosi dari operator/brand)
+
+---
+
+## Docker (Lokal)
+
+Kalau mau test Docker build secara lokal sebelum deploy:
+
+```bash
+# Build image
+docker build -t sms-spam-api .
+
+# Run container
+docker run -p 8080:8080 sms-spam-api
+
+# Test
+curl http://localhost:8080/health
+```
+
+---
+
+## Manage Cloud Run Service
+
+### Cek URL API yang sudah di-deploy
+
+```bash
+gcloud run services describe sms-spam-api --region=asia-southeast2 --format="value(status.url)"
+```
+
+### Allow Public Access (tanpa authentication)
+
+Secara default Cloud Run butuh authentication. Untuk buka akses publik (misal untuk demo):
+
+```bash
+gcloud run services add-iam-policy-binding sms-spam-api \
+  --region=asia-southeast2 \
+  --member="allUsers" \
+  --role="roles/run.invoker"
+```
+
+### Matikan Service (sementara)
+
+Ini bikin service tetap ada tapi gak jalan (gak kena charge):
+
+```bash
+gcloud run services update sms-spam-api --region=asia-southeast2 --max-instances=0
+```
+
+Nyalain lagi:
+```bash
+gcloud run services update sms-spam-api --region=asia-southeast2 --max-instances=10
+```
+
+### Hapus Service (permanen)
+
+```bash
+gcloud run services delete sms-spam-api --region=asia-southeast2 --quiet
+```
+
+---
+
+## Tentang Dataset
+
+Dataset berisi **~1143 SMS berbahasa Indonesia** dengan 3 kategori:
+
+| Label | Kategori | Jumlah | Contoh |
+|---|---|---|---|
+| `0` | Normal | ~569 | "Halo, apa kabar? Besok jadi ketemuan kan?" |
+| `1` | Spam | ~335 | "Pinjaman cepat cair, hub 08xx..." |
+| `2` | Promo | ~239 | "GRATIS kuota 2GB! Aktifkan di *363#" |
+
+Sumber: Dataset SMS spam Indonesia (publik).
+
+---
+
+## Tentang Model
+
+### Model Saat Ini: TF-IDF + LinearSVC
+
+Pipeline:
+1. **TfidfVectorizer** — Mengubah teks SMS menjadi vektor numerik (TF-IDF)
+   - `max_features=5000`, `ngram_range=(1,2)`, `sublinear_tf=True`
+2. **CalibratedClassifierCV(LinearSVC)** — Classifier SVM linear dengan calibrated probabilities
+   - `C=1.0`, `max_iter=5000`
+
+### Model Sebelumnya: CountVectorizer + MultinomialNB
+
+Pipeline lama (sudah diganti via PR):
+1. **CountVectorizer** — Bag of Words sederhana
+2. **MultinomialNB** — Naive Bayes classifier
+
+---
+
+## Troubleshooting
+
+### "Model not found" saat jalankan tests
+Pastikan model sudah di-train dulu:
+```bash
+python training/train.py
+```
+
+### "Permission denied" saat deploy ke Cloud Run
+Pastikan service account punya semua role yang dibutuhkan (lihat [Step 6](#step-6-berikan-permission-ke-service-account)).
+
+### CI/CD gagal di step "Deploy to Cloud Run"
+- Cek apakah 3 GitHub Secrets sudah diisi (`GCP_PROJECT_ID`, `GCP_SA_KEY`, `GCP_REGION`)
+- Cek apakah API sudah di-enable (`run.googleapis.com`, `artifactregistry.googleapis.com`, `cloudbuild.googleapis.com`)
+
+### PR comment tidak muncul
+- Pastikan workflow punya `permissions: pull-requests: write`
+- Cek tab Actions di GitHub untuk lihat error detail
+
+### API return 403 Forbidden
+Jalankan perintah allow public access di atas.
 
 ---
 
